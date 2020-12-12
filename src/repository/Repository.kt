@@ -12,4 +12,8 @@ interface Repository {
 
     suspend fun addTodo(userId: Int, todo: String, done: Boolean): Todo?
     suspend fun getTodos(userId: Int): List<Todo>
+
+    suspend fun updateTodo(todoId : Int, status : Boolean ) : Todo?
+
+    suspend fun getTodoById(todoId: Int) : Todo?
 }
