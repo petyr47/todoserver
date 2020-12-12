@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.statements.InsertStatement
+import org.jetbrains.exposed.sql.update
 
 class TodoRepository : Repository {
 
@@ -55,8 +56,31 @@ class TodoRepository : Repository {
         return dbQuery {
             Todos.select {
                 Todos.userId.eq((userId)) // 3
-            }.mapNotNull { rowToTodo(it) }
+            }.orderBy(Todos.id).mapNotNull { rowToTodo(it) }
         }
+    }
+
+    override suspend fun updateTodo(todoId: Int, status: Boolean): Todo? {
+        val result =
+            dbQuery {
+                Todos.update({Todos.id eq todoId}){
+                    it[done] = status
+                }
+            }
+        return if (result > 0) {
+            getTodoById(todoId)
+        } else {
+           null
+        }
+    }
+
+    override suspend fun getTodoById(todoId: Int): Todo? {
+        return dbQuery {
+            Todos.select {
+                Todos.id.eq((todoId))
+            }.map { rowToTodo(it) }.singleOrNull()
+        }
+
     }
 
     // 4
