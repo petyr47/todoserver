@@ -17,6 +17,9 @@ const val USERS = "$API_VERSION/users"
 const val USER_LOGIN = "$USERS/login"
 const val USER_CREATE = "$USERS/create"
 
+const val TODOS = "$API_VERSION/todos"
+const val UPDATE_TODOS = "$API_VERSION/todos/{todoId}/update"
+
 
 @KtorExperimentalLocationsAPI
 @Location(USER_LOGIN)
@@ -26,11 +29,15 @@ class UserLoginRoute
 @Location(USER_CREATE)
 class UserCreateRoute
 
-const val TODOS = "$API_VERSION/todos"
+
 
 @KtorExperimentalLocationsAPI
 @Location(TODOS)
 class TodoRoute
+
+@KtorExperimentalLocationsAPI
+@Location(UPDATE_TODOS)
+class TodoUpdateRoute(val todoId : Int)
 
 
 
@@ -139,6 +146,26 @@ fun Route.todos(db: Repository) {
             } catch (e: Throwable) {
                 application.log.error("Failed to get Todos", e)
                 call.respond(HttpStatusCode.BadRequest, "Problems getting Todos")
+            }
+        }
+
+        post<TodoUpdateRoute> {
+            val todoId = call.parameters.get("todoId") ?: return@post call.respond(HttpStatusCode.BadRequest,
+                "Request must contain todoId path")
+
+            val params = call.receive<Parameters>()
+            val done = params["status"] ?: "false"
+
+            try {
+               val result =  db.updateTodo(todoId = todoId.toInt(), status = done.toBoolean())
+                if (result != null) {
+                    call.respond(result)
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, "Encountered an error trying to update todo")
+                }
+            } catch (e : Exception){
+                application.log.error("Failed to get Todos", e)
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "An Unknown error has occurred")
             }
         }
     }
